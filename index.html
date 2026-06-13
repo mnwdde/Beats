@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ШифърЧат</title>
+<style>
+:root{
+  --bg:#090910;--s1:#10101a;--s2:#14141f;--s3:#1a1a28;
+  --br:#20202e;--br2:#2a2a3e;
+  --acc:#7c6fff;--acc2:#b39dff;--acc3:#4f46e5;
+  --sent-bg:#1c1840;--sent-bd:rgba(124,111,255,.22);
+  --recv-bg:#13131e;
+  --txt:#eeeef5;--txt2:#aaaabc;--txt3:#606078;
+  --grn:#3de8a0;--red:#ff6b6b;--ylw:#fbbf24;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter','Segoe UI',sans-serif;
+  --r:14px;--r2:20px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{height:100%;width:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ─── SCREENS ─── */
+.scr{display:none;flex-direction:column;height:100dvh;width:100%;position:absolute;top:0;left:0;transition:opacity .25s,transform .25s}
+.scr.active{display:flex}
+.scr.slide-in{animation:slideIn .25s ease forwards}
+.scr.slide-out{animation:slideOut .2s ease forwards}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(-30%);opacity:0}}
+
+/* ─── SCREEN 1: WELCOME ─── */
+#s-welcome{background:radial-gradient(ellipse 120% 60% at 50% -5%,#1a1550 0%,var(--bg) 70%);align-items:center;justify-content:flex-start;padding:0}
+
+.welcome-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem 1rem}
+
+.app-icon-wrap{position:relative;margin-bottom:1.4rem}
+.app-icon{width:88px;height:88px;border-radius:24px;background:linear-gradient(135deg,#2d2680,#4f46e5);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 40px rgba(124,111,255,.35)}
+.app-icon svg{width:46px;height:46px}
+.icon-glow{position:absolute;inset:-8px;border-radius:32px;background:radial-gradient(circle,rgba(124,111,255,.18) 0%,transparent 70%);pointer-events:none;animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+
+.app-name{font-family:var(--mono);font-size:2rem;font-weight:700;letter-spacing:.06em;background:linear-gradient(120deg,#fff 30%,var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.app-tagline{font-size:.72rem;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-top:.3rem}
+
+.badges{display:flex;gap:.5rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center}
+.badge{padding:.28rem .7rem;border-radius:20px;font-size:.6rem;font-family:var(--mono);letter-spacing:.06em;border:1px solid}
+.badge.enc{color:var(--grn);border-color:rgba(61,232,160,.25);background:rgba(61,232,160,.08)}
+.badge.p2p{color:var(--acc2);border-color:rgba(179,157,255,.25);background:rgba(179,157,255,.08)}
+.badge.nolog{color:var(--ylw);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.08)}
+
+.welcome-bottom{padding:1.5rem;width:100%;padding-bottom:calc(1.5rem + var(--safe-b))}
+.welcome-bottom .btn{margin-bottom:.7rem}
+
+/* ─── SCREEN 2: SETUP ─── */
+#s-setup{background:var(--bg)}
+.setup-inner{flex:1;overflow-y:auto;padding:1rem 1.2rem;display:flex;flex-direction:column;gap:1rem}
+
+.top-bar{display:flex;align-items:center;gap:.6rem;padding:.9rem 1.2rem;background:var(--s1);border-bottom:1px solid var(--br);flex-shrink:0}
+.top-bar-title{font-size:1rem;font-weight:600;flex:1}
+.icon-btn{background:none;border:none;color:var(--txt2);padding:.4rem;cursor:pointer;border-radius:8px;display:flex;align-items:center}
+.icon-btn:active{background:var(--br)}
+
+.section-card{background:var(--s2);border:1px solid var(--br);border-radius:var(--r2);padding:1.1rem}
+.section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);font-family:var(--mono);margin-bottom:.9rem;display:flex;align-items:center;gap:.4rem}
+
+.field{margin-bottom:.85rem}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:.7rem;color:var(--txt2);margin-bottom:.35rem;font-family:var(--mono)}
+.finput{width:100%;background:var(--s1);border:1.5px solid var(--br);border-radius:10px;padding:.72rem .9rem;color:var(--txt);font-family:var(--sans);font-size:.9rem;outline:none;transition:border-color .2s,-webkit-appearance 0s}
+.finput:focus{border-color:var(--acc)}
+.finput::placeholder{color:var(--txt3)}
+
+.my-id-box{background:var(--s1);border:1.5px solid var(--br2);border-radius:10px;padding:.8rem;display:flex;align-items:center;gap:.7rem;cursor:pointer;transition:border-color .2s}
+.my-id-box:active{border-color:var(--acc)}
+.my-id-val{flex:1;font-family:var(--mono);font-size:.78rem;color:var(--acc2);word-break:break-all;line-height:1.4}
+.copy-btn-small{flex-shrink:0;background:var(--br2);border:none;color:var(--txt2);border-radius:7px;padding:.4rem .6rem;cursor:pointer;font-size:.65rem;font-family:var(--mono);white-space:nowrap}
+.copy-btn-small:active{background:var(--acc);color:#fff}
+
+.status-row{display:flex;align-items:center;gap:.5rem;font-size:.7rem;font-family:var(--mono);color:var(--txt3);margin-top:.7rem}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.dot.grn{background:var(--grn);box-shadow:0 0 7px var(--grn)}
+.dot.ylw{background:var(--ylw)}
+.dot.red{background:var(--red)}
+.dot.off{background:var(--txt3)}
+
+.share-row{display:flex;gap:.6rem;margin-top:.6rem}
+.share-btn{flex:1;background:var(--s1);border:1px solid var(--br2);border-radius:10px;padding:.65rem;color:var(--txt2);font-size:.72rem;font-family:var(--mono);cursor:pointer;text-align:center;transition:all .2s}
+.share-btn:active{background:var(--acc);color:#fff;border-color:var(--acc)}
+
+.how-steps{display:flex;flex-direction:column;gap:.7rem;margin-top:.2rem}
+.how-step{display:flex;align-items:flex-start;gap:.75rem}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--acc3);color:#fff;font-family:var(--mono);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.05rem}
+.step-txt{font-size:.8rem;color:var(--txt2);line-height:1.5}
+.step-txt strong{color:var(--txt)}
+
+/* ─── SCREEN 3: WAITING ─── */
+#s-wait{background:var(--bg);align-items:center;justify-content:center}
+.wait-inner{display:flex;flex-direction:column;align-items:center;gap:1.2rem;padding:2rem;text-align:center}
+.spinner-ring{width:72px;height:72px;border-radius:50%;border:3px solid var(--br2);border-top-color:var(--acc);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wait-title{font-size:1.1rem;font-weight:600}
+.wait-sub{font-size:.78rem;color:var(--txt2);line-height:1.6;max-width:260px}
+.wait-id{background:var(--s2);border:1px solid var(--br2);border-radius:12px;padding:.8rem 1.1rem;font-family:var(--mono);font-size:.75rem;color:var(--acc2);cursor:pointer;display:flex;align-items:center;gap:.6rem}
+.wait-id span{flex:1;word-break:break-all}
+
+/* ─── SCREEN 4: CHAT ─── */
+#s-chat{background:var(--bg)}
+
+.chat-header{background:var(--s1);border-bottom:1px solid var(--br);padding:.8rem 1rem;display:flex;align-items:center;gap:.7rem;flex-shrink:0}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0}
+.header-info{flex:1;min-width:0}
+.header-name{font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-sub{font-size:.6rem;font-family:var(--mono);color:var(--txt3);margin-top:.1rem;display:flex;align-items:center;gap:.3rem}
+.enc-badge{background:rgba(61,232,160,.1);border:1px solid rgba(61,232,160,.2);border-radius:20px;padding:.2rem .55rem;font-size:.58rem;font-family:var(--mono);color:var(--grn);letter-spacing:.04em;display:flex;align-items:center;gap:.25rem;flex-shrink:0}
+
+.msgs{flex:1;overflow-y:auto;overflow-x:hidden;padding:.8rem .9rem;display:flex;flex-direction:column;gap:.4rem;overscroll-behavior:contain}
+.msgs::-webkit-scrollbar{width:0}
+
+.msg-wrap{display:flex;flex-direction:column;max-width:82%;animation:msgIn .18s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg-wrap.sent{align-self:flex-end;align-items:flex-end}
+.msg-wrap.recv{align-self:flex-start;align-items:flex-start}
+.bubble{padding:.6rem .85rem;border-radius:16px;font-size:.875rem;line-height:1.45;word-break:break-word;position:relative}
+.sent .bubble{background:var(--sent-bg);border:1px solid var(--sent-bd);border-bottom-right-radius:3px}
+.recv .bubble{background:var(--recv-bg);border:1px solid var(--br);border-bottom-left-radius:3px}
+.msg-meta{font-size:.56rem;font-family:var(--mono);color:var(--txt3);margin-top:.22rem;padding:0 .2rem;display:flex;align-items:center;gap:.3rem}
+.enc-dot{width:5px;height:5px;border-radius:50%;background:var(--grn);opacity:.7}
+.tick{color:var(--acc2);font-size:.7rem}
+
+.sys-msg{align-self:center;text-align:center;font-size:.62rem;font-family:var(--mono);color:var(--txt3);padding:.35rem .8rem;background:var(--s2);border-radius:20px;border:1px solid var(--br);margin:.25rem 0}
+
+.typing-ind{align-self:flex-start;display:flex;align-items:center;gap:.3rem;padding:.5rem .8rem;background:var(--recv-bg);border:1px solid var(--br);border-radius:14px;border-bottom-left-radius:3px}
+.typing-ind span{width:7px;height:7px;border-radius:50%;background:var(--txt3);animation:blink 1.2s ease infinite}
+.typing-ind span:nth-child(2){animation-delay:.2s}
+.typing-ind span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2;transform:scale(1)}40%{opacity:1;transform:scale(1.15)}}
+
+.chat-input-wrap{background:var(--s1);border-top:1px solid var(--br);padding:.7rem .9rem;padding-bottom:calc(.7rem + var(--safe-b));display:flex;align-items:flex-end;gap:.55rem;flex-shrink:0}
+#mi{flex:1;background:var(--s2);border:1.5px solid var(--br);border-radius:22px;padding:.65rem 1rem;color:var(--txt);font-family:var(--sans);font-size:.9rem;outline:none;resize:none;max-height:110px;min-height:42px;line-height:1.4;transition:border-color .2s;-webkit-appearance:none}
+#mi:focus{border-color:var(--acc)}
+#mi::placeholder{color:var(--txt3)}
+#send-btn{width:42px;height:42px;border-radius:50%;background:var(--acc);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+#send-btn:active{transform:scale(.9);background:var(--acc3)}
+#send-btn:disabled{background:var(--br2);cursor:not-allowed}
+
+/* ─── SHARED BUTTONS ─── */
+.btn{display:block;width:100%;padding:.85rem;border-radius:12px;border:none;font-family:var(--sans);font-size:.92rem;font-weight:600;cursor:pointer;transition:all .18s;text-align:center}
+.btn-prim{background:var(--acc);color:#fff}
+.btn-prim:active{background:var(--acc3);transform:scale(.98)}
+.btn-sec{background:transparent;color:var(--acc2);border:1.5px solid var(--br2)}
+.btn-sec:active{background:var(--s2)}
+.btn-outline{background:var(--s2);color:var(--txt2);border:1px solid var(--br2)}
+.btn-outline:active{background:var(--s3)}
+
+/* ─── NOTIF BANNER ─── */
+.notif-banner{position:fixed;top:0;left:0;right:0;background:var(--s2);border-bottom:1px solid var(--br);padding:calc(.8rem + env(safe-area-inset-top)) 1rem .8rem;display:flex;align-items:center;gap:.7rem;z-index:999;transform:translateY(-110%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.notif-banner.show{transform:translateY(0)}
+.notif-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0}
+.notif-body{flex:1;min-width:0}
+.notif-name{font-size:.8rem;font-weight:600}
+.notif-preview{font-size:.75rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notif-time{font-size:.6rem;font-family:var(--mono);color:var(--txt3)}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(16px);background:var(--s2);border:1px solid var(--br2);border-radius:10px;padding:.55rem 1.1rem;font-size:.73rem;font-family:var(--mono);color:var(--txt);opacity:0;pointer-events:none;transition:all .25s;z-index:1000;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── CONN OVERLAY ─── */
+.conn-overlay{position:fixed;inset:0;background:rgba(9,9,16,.92);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:500;opacity:0;pointer-events:none;transition:opacity .3s;padding:2rem;text-align:center}
+.conn-overlay.show{opacity:1;pointer-events:all}
+.conn-overlay .spinner-ring{width:56px;height:56px;border-width:2.5px}
+.conn-overlay-title{font-size:1.1rem;font-weight:600}
+.conn-overlay-sub{font-size:.78rem;color:var(--txt2);line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ══════════ S1: WELCOME ══════════ -->
+<div id="s-welcome" class="scr active">
+  <div class="welcome-top">
+    <div class="app-icon-wrap">
+      <div class="icon-glow"></div>
+      <div class="app-icon">
+        <svg viewBox="0 0 46 46" fill="none">
+          <path d="M23 4C14.716 4 8 10.716 8 19c0 4.56 1.988 8.657 5.157 11.5L12 40l9.5-3.5C22.315 36.66 22.654 37 23 37c8.284 0 15-6.716 15-15S31.284 4 23 4z" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/>
+          <rect x="16" y="17" width="14" height="11" rx="2" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.5)" stroke-width="1.2"/>
+          <path d="M19 17v-2.5a4 4 0 0 1 8 0V17" stroke="rgba(255,255,255,.6)" stroke-width="1.3" stroke-linecap="round"/>
+          <circle cx="23" cy="22.5" r="1.8" fill="white"/>
+          <line x1="23" y1="24.3" x2="23" y2="26.5" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="app-name">ШифърЧат</div>
+    <div class="app-tagline">Частни · Криптирани · P2P</div>
+    <div class="badges">
+      <div class="badge enc">🔒 AES-256-GCM</div>
+      <div class="badge p2p">⚡ Peer-to-Peer</div>
+      <div class="badge nolog">🚫 Без логове</div>
+    </div>
+  </div>
+  <div class="welcome-bottom">
+    <button class="btn btn-prim" onclick="goSetup()">Започни →</button>
+    <button class="btn btn-sec" onclick="showHow()">Как работи?</button>
+  </div>
+</div>
+
+<!-- ══════════ S2: SETUP ══════════ -->
+<div id="s-setup" class="scr">
+  <div class="top-bar">
+    <button class="icon-btn" onclick="goScreen('s-welcome')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="top-bar-title">Настройка</div>
+  </div>
+
+  <div class="setup-inner">
+    <!-- MY PROFILE -->
+    <div class="section-card">
+      <div class="section-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Твоят профил
+      </div>
+      <div class="field">
+        <label>Твоето си наименование</label>
+        <input class="finput" type="text" id="my-name" placeholder="Иван" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <button class="btn btn-prim" id="gen-btn" onclick="initPeer()">Генерирай ключове и ID</button>
+
+      <div id="my-id-wrap" style="display:none;margin-top:1rem">
+        <div class="field" style="margin-bottom:.5rem">
+          <label>Твоят ID — изпрати го на приятеля си</label>
+          <div class="my-id-box" onclick="copyMyId()">
+            <span class="my-id-val" id="my-id-val">генерира се…</span>
+            <button class="copy-btn-small" onclick="copyMyId();event.stopPropagation()">Копирай</button>
+          </div>
+        </div>
+        <div class="share-row">
+          <button class="share-btn" onclick="shareId()">📤 Сподели ID</button>
+          <button class="share-btn" onclick="copyMyId()">📋 Копирай</button>
+        </div>
+        <div class="status-row">
+          <div class="dot off" id="my-dot"></div>
+          <span id="my-status">Свързване към мрежата…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONNECT -->
+    <div class="section-card" id="connect-card" style="display:none">
+      <div class="section-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Свържи се с приятел
+      </div>
+      <div class="field">
+        <label>ID на приятеля (изпратен от него)</label>
+        <input class="finput" type="text" id="friend-id" placeholder="Постави ID тук…" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="none">
+      </div>
+      <div class="field">
+        <label>Как го/я наричаш?</label>
+        <input class="finput" type="text" id="friend-name" placeholder="Петър" maxlength="20" autocomplete="off">
+      </div>
+      <button class="btn btn-prim" onclick="connectPeer()">Свържи се →</button>
+      <div style="margin-top:.7rem;font-size:.68rem;color:var(--txt3);text-align:center;font-family:var(--mono)">или изчакай той да се свърже с теб</div>
+    </div>
+
+    <!-- HOW TO -->
+    <div class="section-card">
+      <div class="section-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Как да се свържете
+      </div>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <div class="step-txt"><strong>Двамата</strong> отворете приложението и въведете имена си → Генерирай</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <div class="step-txt"><strong>Единият</strong> копира своя ID и го изпраща на другия (SMS, Viber, каквото е удобно)</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <div class="step-txt"><strong>Другият</strong> поставя получения ID в полето „ID на приятеля" → Свържи се</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">4</div>
+          <div class="step-txt"><strong>Готово!</strong> Криптираният чат е установен. Съобщенията не се съхраняват никъде.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ S3: WAITING ══════════ -->
+<div id="s-wait" class="scr">
+  <div class="wait-inner">
+    <div class="spinner-ring"></div>
+    <div class="wait-title">Чакаш <span id="wait-friend">приятеля</span>…</div>
+    <div class="wait-sub">Връзката ще се установи автоматично щом другата страна се свърже с твоя ID</div>
+    <div class="wait-id" onclick="copyMyId()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span id="wait-id-val">…</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </div>
+    <button class="btn btn-outline" style="max-width:240px" onclick="goScreen('s-setup')">← Обратно</button>
+  </div>
+</div>
+
+<!-- ══════════ S4: CHAT ══════════ -->
+<div id="s-chat" class="scr">
+  <div class="chat-header">
+    <button class="icon-btn" onclick="goScreen('s-setup')" style="color:var(--txt2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="avatar" id="fr-avatar">П</div>
+    <div class="header-info">
+      <div class="header-name" id="fr-name">Приятел</div>
+      <div class="header-sub">
+        <div class="dot grn" id="chat-dot" style="width:6px;height:6px"></div>
+        <span id="chat-st">свързан</span>
+        &nbsp;·&nbsp;
+        <span id="fp-val" style="font-size:.58rem;opacity:.7"></span>
+      </div>
+    </div>
+    <div class="enc-badge">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      E2EE
+    </div>
+  </div>
+
+  <div class="msgs" id="msgs"></div>
+
+  <div class="chat-input-wrap">
+    <textarea id="mi" placeholder="Съобщение…" rows="1"
+      oninput="autoResize(this);typingSignal()"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+    ></textarea>
+    <button id="send-btn" onclick="sendMsg()" disabled>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Notification banner (shown when in background) -->
+<div class="notif-banner" id="notif-banner" onclick="dismissNotif()">
+  <div class="notif-ava" id="nb-ava">П</div>
+  <div class="notif-body">
+    <div class="notif-name" id="nb-name">Приятел</div>
+    <div class="notif-preview" id="nb-prev">…</div>
+  </div>
+  <div class="notif-time" id="nb-time"></div>
+</div>
+
+<!-- Connection overlay -->
+<div class="conn-overlay" id="conn-overlay">
+  <div class="spinner-ring"></div>
+  <div class="conn-overlay-title">Свързване…</div>
+  <div class="conn-overlay-sub">Установяване на криптиран канал</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+// ════════ STATE ════════
+let peer=null,conn=null;
+let myName='',friendName='Приятел';
+let aesKey=null,myKP=null;
+let msgs=[];
+let typingTimer=null,peerTyping=false,peerTypingEl=null;
+let currentScreen='s-welcome';
+let notifTimer=null;
+let audioCtx=null;
+
+// ════════ NAVIGATION ════════
+function goScreen(id,slide=true){
+  document.querySelectorAll('.scr').forEach(s=>{
+    s.classList.remove('active','slide-in');
+  });
+  const el=document.getElementById(id);
+  el.classList.add('active');
+  if(slide) el.classList.add('slide-in');
+  currentScreen=id;
+}
+function goSetup(){goScreen('s-setup')}
+
+// ════════ PEER SERVERS (fallback list) ════════
+const PEER_SERVERS=[
+  // Server 1: peerjs.com default
+  {host:'0.peerjs.com',port:443,secure:true,path:'/'},
+  // Server 2: peerjs herokuapp
+  {host:'peerjs-server.herokuapp.com',port:443,secure:true,path:'/'},
+];
+let serverIdx=0;
+
+function makePeer(kp, onOpen){
+  const cfg=PEER_SERVERS[serverIdx%PEER_SERVERS.length];
+  const p=new Peer(undefined,{
+    ...cfg,
+    config:{iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'},
+      {urls:'stun:stun2.l.google.com:19302'},
+      {urls:'stun:stun.cloudflare.com:3478'},
+    ]}
+  });
+  p.on('open', onOpen);
+  p.on('connection',inc=>{
+    conn=inc;
+    friendName=document.getElementById('friend-name').value.trim()||'Приятел';
+    hookConn(false);
+  });
+  p.on('error',e=>{
+    const errMap={
+      'network':'Мрежова грешка — опитвам резервен сървър…',
+      'unavailable-id':'Приятелят не е онлайн или ID е изтекъл',
+      'invalid-id':'Невалиден ID формат',
+      'peer-unavailable':'Приятелят не е намерен'
+    };
+    const msg=errMap[e.type]||('Грешка: '+e.type);
+    if(e.type==='network'||e.type==='server-error'){
+      // try next server
+      serverIdx++;
+      if(serverIdx<4){
+        setStatus('ylw','Опитвам резервен сървър ('+serverIdx+')…');
+        setTimeout(()=>{
+          try{p.destroy();}catch{}
+          peer=makePeer(kp,id=>{
+            onPeerOpen(id);
+          });
+        },1200);
+      } else {
+        setStatus('red','Няма връзка. Отвори файла в Chrome!');
+        showToast('⚠ Отвори файла директно в Chrome браузъра',5000);
+        document.getElementById('gen-btn').disabled=false;
+        document.getElementById('gen-btn').textContent='Опитай пак';
+      }
+    } else {
+      setStatus('red', msg);
+      showToast('⚠ '+msg, 4000);
+    }
+  });
+  return p;
+}
+
+function onPeerOpen(id){
+  document.getElementById('my-id-val').textContent=id;
+  document.getElementById('wait-id-val').textContent=id;
+  document.getElementById('my-id-wrap').style.display='block';
+  document.getElementById('connect-card').style.display='block';
+  document.getElementById('gen-btn').textContent='✓ Ключовете са готови';
+  setStatus('grn','Готов · Чака връзка');
+}
+
+function setStatus(cls, msg){
+  document.getElementById('my-dot').className='dot '+cls;
+  document.getElementById('my-status').textContent=msg;
+}
+
+// ════════ PEER INIT ════════
+function initPeer(){
+  const n=document.getElementById('my-name').value.trim();
+  if(!n){showToast('Въведи своето си наименование');return;}
+  myName=n;
+  document.getElementById('gen-btn').disabled=true;
+  document.getElementById('gen-btn').textContent='Генерира се…';
+  serverIdx=0;
+
+  window.crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey'])
+  .then(kp=>{
+    myKP=kp;
+    setStatus('ylw','Свързване към сървър…');
+    peer=makePeer(kp, id=>{
+      onPeerOpen(id);
+    });
+  });
+}
+
+function connectPeer(){
+  const fid=document.getElementById('friend-id').value.trim();
+  const fn=document.getElementById('friend-name').value.trim();
+  if(!fid){showToast('Постави ID на приятеля');return;}
+  if(!peer){showToast('Първо генерирай ключове');return;}
+  friendName=fn||'Приятел';
+  document.getElementById('wait-friend').textContent=friendName;
+  goScreen('s-wait');
+  showOverlay(true);
+  conn=peer.connect(fid,{reliable:true});
+  hookConn(true);
+}
+
+// ════════ CONNECTION ════════
+function hookConn(isInitiator){
+  conn.on('open',()=>{
+    exportPub().then(raw=>{
+      sendRaw({t:'KEY',n:myName,k:Array.from(raw)});
+    });
+  });
+  conn.on('data',async d=>{
+    let m;
+    try{
+      if(typeof d==='string') m=JSON.parse(d);
+      else if(typeof d==='object'&&d!==null&&!(d instanceof ArrayBuffer)) m=d;
+      else m=JSON.parse(new TextDecoder().decode(d));
+    }catch{return;}
+    if(m.t==='KEY'){
+      if(!friendName||friendName==='Приятел') friendName=m.n||'Приятел';
+      await importAndDerive(new Uint8Array(m.k));
+      if(!m.ack) sendRaw({t:'KEY',n:myName,k:Array.from(await exportPub()),ack:true});
+      openChat();
+    } else if(m.t==='MSG'){
+      await receiveMsg(m);
+    } else if(m.t==='TYP'){
+      showPeerTyping(m.v);
+    }
+  });
+  conn.on('close',()=>handleDisconnect());
+  conn.on('error',()=>handleDisconnect());
+}
+
+function sendRaw(obj){
+  if(conn&&conn.open) conn.send(JSON.stringify(obj));
+}
+
+function handleDisconnect(){
+  document.getElementById('chat-dot').className='dot red';
+  document.getElementById('chat-dot').style.cssText='width:6px;height:6px;background:var(--red)';
+  document.getElementById('chat-st').textContent='изключен';
+  document.getElementById('send-btn').disabled=true;
+  sysMsg('⚠ Връзката е прекъсната');
+}
+
+// ════════ CRYPTO ════════
+async function exportPub(){
+  return new Uint8Array(await crypto.subtle.exportKey('raw',myKP.publicKey));
+}
+async function importAndDerive(raw){
+  const pk=await crypto.subtle.importKey('raw',raw,{name:'ECDH',namedCurve:'P-256'},false,[]);
+  aesKey=await crypto.subtle.deriveKey(
+    {name:'ECDH',public:pk},myKP.privateKey,
+    {name:'AES-GCM',length:256},false,['encrypt','decrypt']
+  );
+}
+async function enc(text){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,new TextEncoder().encode(text));
+  return{iv:Array.from(iv),ct:Array.from(new Uint8Array(ct))};
+}
+async function dec(iv,ct){
+  const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(iv)},aesKey,new Uint8Array(ct));
+  return new TextDecoder().decode(p);
+}
+async function fingerprint(){
+  const raw=await crypto.subtle.exportKey('raw',myKP.publicKey);
+  const h=await crypto.subtle.digest('SHA-256',raw);
+  return Array.from(new Uint8Array(h)).slice(0,4).map(b=>b.toString(16).padStart(2,'0')).join(':');
+}
+
+// ════════ CHAT OPEN ════════
+async function openChat(){
+  showOverlay(false);
+  msgs=[];
+  document.getElementById('msgs').innerHTML='';
+  document.getElementById('fr-name').textContent=friendName;
+  document.getElementById('fr-avatar').textContent=friendName[0]?.toUpperCase()||'?';
+  document.getElementById('nb-ava').textContent=friendName[0]?.toUpperCase()||'?';
+  document.getElementById('nb-name').textContent=friendName;
+  const fp=await fingerprint();
+  document.getElementById('fp-val').textContent='🔑 '+fp;
+  document.getElementById('send-btn').disabled=false;
+  goScreen('s-chat');
+  sysMsg('🔒 E2E криптирана сесия · AES-256-GCM');
+  requestNotifPermission();
+}
+
+// ════════ MESSAGES ════════
+async function sendMsg(){
+  const ta=document.getElementById('mi');
+  const text=ta.value.trim();
+  if(!text||!conn?.open||!aesKey)return;
+  ta.value='';autoResize(ta);
+  const{iv,ct}=await enc(text);
+  sendRaw({t:'MSG',iv,ct});
+  appendMsg({from:'me',text,ts:Date.now()});
+  playSound('send');
+}
+
+async function receiveMsg(m){
+  try{
+    const text=await dec(m.iv,m.ct);
+    appendMsg({from:'friend',text,ts:Date.now()});
+    showPeerTyping(false);
+    if(currentScreen!=='s-chat'||document.hidden){
+      showNotif(text);
+      playSound('recv');
+      vibrate();
+    } else {
+      playSound('recv');
+      vibrate([30]);
+    }
+  }catch{sysMsg('⚠ Декриптиране неуспешно');}
+}
+
+function appendMsg(m){
+  msgs.push(m);
+  const area=document.getElementById('msgs');
+  if(peerTypingEl) area.removeChild(peerTypingEl),peerTypingEl=null;
+
+  const wrap=document.createElement('div');
+  wrap.className='msg-wrap '+(m.from==='me'?'sent':'recv');
+  const bub=document.createElement('div');
+  bub.className='bubble';
+  bub.textContent=m.text;
+  const meta=document.createElement('div');
+  meta.className='msg-meta';
+  const dot=document.createElement('div');dot.className='enc-dot';
+  meta.appendChild(dot);
+  meta.appendChild(document.createTextNode(fmtTime(m.ts)));
+  if(m.from==='me'){const t=document.createElement('span');t.className='tick';t.textContent='✓';meta.appendChild(t);}
+  wrap.appendChild(bub);wrap.appendChild(meta);
+  area.appendChild(wrap);
+  area.scrollTop=area.scrollHeight;
+}
+
+function sysMsg(t){
+  const area=document.getElementById('msgs');
+  const el=document.createElement('div');
+  el.className='sys-msg';el.textContent=t;
+  area.appendChild(el);
+  area.scrollTop=area.scrollHeight;
+}
+
+// ════════ TYPING ════════
+let lastTypSend=0;
+function typingSignal(){
+  const now=Date.now();
+  if(now-lastTypSend>1500){
+    sendRaw({t:'TYP',v:true});
+    lastTypSend=now;
+  }
+  clearTimeout(typingTimer);
+  typingTimer=setTimeout(()=>{sendRaw({t:'TYP',v:false});},2000);
+}
+
+function showPeerTyping(on){
+  const area=document.getElementById('msgs');
+  if(on&&!peerTypingEl){
+    peerTypingEl=document.createElement('div');
+    peerTypingEl.className='typing-ind';
+    peerTypingEl.innerHTML='<span></span><span></span><span></span>';
+    area.appendChild(peerTypingEl);
+    area.scrollTop=area.scrollHeight;
+  } else if(!on&&peerTypingEl){
+    try{area.removeChild(peerTypingEl);}catch{}
+    peerTypingEl=null;
+  }
+}
+
+// ════════ NOTIFICATIONS ════════
+function requestNotifPermission(){
+  if('Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+}
+
+function showNotif(text){
+  // In-app banner (always)
+  const banner=document.getElementById('notif-banner');
+  document.getElementById('nb-prev').textContent=text;
+  document.getElementById('nb-time').textContent=fmtTime(Date.now());
+  banner.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>banner.classList.remove('show'),4000);
+
+  // Native push if permitted and page hidden
+  if('Notification' in window && Notification.permission==='granted' && document.hidden){
+    new Notification('ШифърЧат — '+friendName,{body:'🔒 Ново криптирано съобщение',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="%234f46e5"/><text y="44" font-size="36" text-anchor="middle" x="32">🔒</text></svg>',silent:false});
+  }
+}
+
+function dismissNotif(){
+  document.getElementById('notif-banner').classList.remove('show');
+  if(currentScreen==='s-chat') return;
+  goScreen('s-chat');
+}
+
+// ════════ SOUND ════════
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function playSound(type){
+  try{
+    const ctx=getAudioCtx();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    if(type==='send'){
+      osc.frequency.setValueAtTime(880,ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200,ctx.currentTime+0.08);
+      gain.gain.setValueAtTime(0.08,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);
+      osc.start();osc.stop(ctx.currentTime+0.1);
+    } else {
+      osc.frequency.setValueAtTime(600,ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(900,ctx.currentTime+0.05);
+      osc.frequency.exponentialRampToValueAtTime(700,ctx.currentTime+0.15);
+      gain.gain.setValueAtTime(0.1,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.18);
+      osc.start();osc.stop(ctx.currentTime+0.18);
+    }
+  }catch{}
+}
+function vibrate(pat=[40,20,40]){
+  if(navigator.vibrate) navigator.vibrate(pat);
+}
+
+// ════════ OVERLAY ════════
+function showOverlay(on){
+  document.getElementById('conn-overlay').classList.toggle('show',on);
+}
+
+// ════════ UTILS ════════
+function fmtTime(ts){
+  return new Date(ts).toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit'});
+}
+function autoResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,110)+'px';
+}
+function copyMyId(){
+  const id=document.getElementById('my-id-val').textContent;
+  if(!id||id==='генерира се…'){showToast('ID още не е готов');return;}
+  // Method 1: modern clipboard API (needs HTTPS)
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(id)
+      .then(()=>showToast('✓ ID копиран!'))
+      .catch(()=>fallbackCopy(id));
+    return;
+  }
+  fallbackCopy(id);
+}
+
+function fallbackCopy(text){
+  // Method 2: execCommand (works on content:// and http)
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80vw;font-size:14px;padding:8px;background:#1a1a28;color:#eeeef5;border:2px solid #7c6fff;border-radius:8px;z-index:9999;text-align:center';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.setSelectionRange(0,ta.value.length);
+  ta.select();
+  let ok=false;
+  try{ok=document.execCommand('copy');}catch{}
+  if(ok){
+    showToast('✓ ID копиран!');
+    document.body.removeChild(ta);
+  } else {
+    // Method 3: show modal with ID to copy manually
+    document.body.removeChild(ta);
+    showCopyModal(text);
+  }
+}
+
+function showCopyModal(id){
+  // Remove existing
+  const old=document.getElementById('copy-modal');
+  if(old) old.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='copy-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;gap:1rem';
+
+  overlay.innerHTML=`
+    <div style="background:#14141f;border:1px solid #2a2a3e;border-radius:16px;padding:1.4rem;width:100%;max-width:340px;text-align:center">
+      <div style="font-size:.75rem;color:#606078;font-family:monospace;margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.08em">Твоят ID</div>
+      <div id="cm-id" style="font-family:monospace;font-size:.9rem;color:#b39dff;word-break:break-all;line-height:1.5;background:#0a0a10;padding:.8rem;border-radius:10px;border:1px solid #2a2a3e;margin-bottom:1rem;user-select:all;-webkit-user-select:all">${id}</div>
+      <div style="font-size:.75rem;color:#aaaabc;margin-bottom:1rem">Задръж пръста върху ID-то → „Избери всичко" → „Копирай"</div>
+      <button onclick="document.getElementById('copy-modal').remove()" style="background:#7c6fff;border:none;color:#fff;padding:.7rem 2rem;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;width:100%">Разбрах</button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  // Try to select the text automatically
+  setTimeout(()=>{
+    try{
+      const el=document.getElementById('cm-id');
+      const range=document.createRange();
+      range.selectNodeContents(el);
+      const sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }catch{}
+  },100);
+}
+function shareId(){
+  const id=document.getElementById('my-id-val').textContent;
+  if(navigator.share){
+    navigator.share({title:'ШифърЧат ID',text:'Свържи се с мен в ШифърЧат с моя ID:\n'+id});
+  } else { copyMyId(); }
+}
+function showToast(msg,dur=2400){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+function showHow(){
+  goSetup();
+  setTimeout(()=>{
+    document.querySelector('.setup-inner').scrollTop=999;
+  },300);
+}
+</script>
+</body>
+</html>
